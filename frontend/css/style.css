@@ -1,0 +1,39 @@
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px 16px; background: #f3f4f6; color: #1f2937; font-family: Arial, sans-serif; }
+.container { width: min(100%, 900px); margin: 0 auto; }
+header { margin-bottom: 24px; }
+h1 { margin: 0 0 8px; font-size: 30px; }
+header p, .list-heading p { margin: 0; color: #6b7280; }
+.card { margin-bottom: 22px; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px #0000000b; }
+h2 { margin: 0 0 18px; font-size: 20px; }
+form { display: grid; grid-template-columns: 1fr 180px auto; gap: 16px; align-items: end; }
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+label { font-weight: 600; font-size: 14px; }
+input { width: 100%; padding: 11px 12px; border: 1px solid #d1d5db; border-radius: 7px; font: inherit; }
+input:focus { outline: 2px solid #bfdbfe; border-color: #2563eb; }
+button { padding: 11px 16px; border: 0; border-radius: 7px; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; }
+button:hover:not(:disabled) { background: #1d4ed8; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+#message { min-height: 18px; margin: 12px 0 0; font-size: 14px; }
+#message.success { color: #15803d; }
+#message.error { color: #b91c1c; }
+.list-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.list-heading h2 { margin-bottom: 5px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+th { background: #f9fafb; font-size: 13px; color: #4b5563; }
+td { font-size: 14px; }
+.empty { padding: 25px; text-align: center; color: #6b7280; }
+.pagination { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
+.pagination button { min-width: 38px; padding: 9px 12px; background: #e5e7eb; color: #1f2937; }
+.pagination button:hover:not(:disabled) { background: #d1d5db; }
+.pagination button.active { background: #2563eb; color: #fff; }
+.pagination button:disabled { opacity: .45; }
+@media (max-width: 650px) {
+  body { padding: 20px 12px; }
+  .card { padding: 18px; }
+  form { grid-template-columns: 1fr; }
+  form button { width: 100%; }
+  h1 { font-size: 25px; }
+}
