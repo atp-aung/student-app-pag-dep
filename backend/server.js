@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const fs = require("fs");
+const path = require("path");
+
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const express = require("express");
@@ -15,6 +18,7 @@ const PAGE_SIZE = 3;
 // Middleware
 // ========================================
 
+// Allowed Frontend Origins
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   ...(process.env.NODE_ENV !== "production"
@@ -22,10 +26,11 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean);
 
+// CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header (e.g. Postman).
+      // Allow requests without an Origin header (e.g. Thunder Client).
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -35,6 +40,7 @@ app.use(
   }),
 );
 
+// JSON Body Parser
 app.use(express.json({ limit: "10kb" }));
 
 // Security Headers
@@ -42,7 +48,7 @@ app.use(helmet());
 
 // API Rate Limiting
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   limit: 100,
   standardHeaders: "draft-8",
   legacyHeaders: false,
@@ -57,19 +63,29 @@ app.use("/api", apiLimiter);
 // MySQL Connection Pool
 // ========================================
 
+// Aiven CA Certificate
+const caCertificate = fs.readFileSync(path.join(__dirname, "ca.pem"), "utf8");
+
+// MySQL Pool
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
+  host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "student_db",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+
+  // Aiven SSL Connection
+  ssl: {
+    ca: caCertificate,
+    rejectUnauthorized: true,
+  },
 
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
   connectTimeout: 10000,
   enableKeepAlive: true,
-  maxIdle: 10,
+  maxIdle: 5,
   idleTimeout: 60000,
 });
 
@@ -242,7 +258,8 @@ app.use((error, req, res, next) => {
   if (
     error.code === "ECONNREFUSED" ||
     error.code === "ETIMEDOUT" ||
-    error.code === "PROTOCOL_CONNECTION_LOST"
+    error.code === "PROTOCOL_CONNECTION_LOST" ||
+    error.code === "ECONNRESET"
   ) {
     return res.status(503).json({
       message: "Database service is temporarily unavailable.",
@@ -255,54 +272,18 @@ app.use((error, req, res, next) => {
 });
 
 // ========================================
-// Start Server
+// Export Express App for Vercel
 // ========================================
 
-let server;
+module.exports = app;
 
-async function startServer() {
-  try {
-    await pool.query("SELECT 1");
+// ========================================
+// Local Development Server
+// ========================================
 
-    console.log("MySQL connection successful!");
-
-    server = app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Unable to connect to MySQL:", error.message);
-
-    await pool.end();
-    process.exit(1);
-  }
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+  });
 }
-
-// ========================================
-// Graceful Shutdown
-// ========================================
-
-async function shutdown(signal) {
-  console.log(`${signal} received. Shutting down...`);
-
-  if (server) {
-    server.close(async () => {
-      try {
-        await pool.end();
-        console.log("Server and database pool closed.");
-        process.exit(0);
-      } catch (error) {
-        console.error("Shutdown error:", error.message);
-        process.exit(1);
-      }
-    });
-  } else {
-    await pool.end();
-    process.exit(0);
-  }
-}
-
-process.once("SIGINT", () => shutdown("SIGINT"));
-process.once("SIGTERM", () => shutdown("SIGTERM"));
-
-startServer();
