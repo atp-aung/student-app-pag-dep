@@ -2,7 +2,10 @@
 // API Configuration
 // ========================================
 
-const API_BASE_URL = "http://localhost:3000";
+//const API_BASE_URL = "http://localhost:3000";
+//const API_URL = `${API_BASE_URL}/api/students`;
+
+const API_BASE_URL = "https://student-registration-api-lake.vercel.app";
 const API_URL = `${API_BASE_URL}/api/students`;
 
 const PAGE_SIZE = 3;
